@@ -36,6 +36,10 @@ export default {
 		const data = await response.json();
 		console.log(data);
 
+		// 向下兼容：优先使用旧格式 subnets，不存在则使用新格式 prefixes
+		const prefixData = data.subnets || data.prefixes;
+		if (!prefixData) return new Response('"无效的响应格式"', { status: 400 });
+
 		if (path.endsWith('.json')) {
 			return new Response(JSON.stringify(data, null, 4), {
 				status: 200,
@@ -44,15 +48,15 @@ export default {
 				},
 			});
 		} else {
-			const ipv4Subnets = data.subnets.ipv4;
+			const ipv4Subnets = prefixData.ipv4;
 			const ipv4Text = ipv4Subnets.join('\n');
 			let text = ipv4Text;
 			if ((url.searchParams.has('6') && url.searchParams.has('4')) || url.searchParams.has('all')) {
-				const ipv6Subnets = data.subnets.ipv6;
+				const ipv6Subnets = prefixData.ipv6;
 				const ipv6Text = ipv6Subnets.join('\n');
 				if (ipv6Text) text += '\n' + ipv6Text;
 			} else if (url.searchParams.has('6')) {
-				const ipv6Subnets = data.subnets.ipv6;
+				const ipv6Subnets = prefixData.ipv6;
 				const ipv6Text = ipv6Subnets.join('\n');
 				text = ipv6Text;
 			}
